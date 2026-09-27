@@ -1,0 +1,32 @@
+name: Astra Android Build
+
+on:
+  push:
+    branches: [astra-integration, astra-build-check]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+      - name: Make Gradle executable
+        run: chmod +x Android/gradlew
+      - name: Build debug APK
+        working-directory: Android
+        run: ./gradlew :src:app:assembleDebug --stacktrace
+      - name: Upload APK
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: astra-debug-apk
+          path: Android/src/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
