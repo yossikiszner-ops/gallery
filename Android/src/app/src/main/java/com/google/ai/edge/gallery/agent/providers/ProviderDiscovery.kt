@@ -1,53 +1,38 @@
-/*
- * Copyright 2026 Google LLC
- * Licensed under the Apache License, Version 2.0.
- */
 package com.google.ai.edge.gallery.agent.providers
 
-/** Credential material is passed only for the duration of a discovery/request operation. */
+/** Credential material exists only for the duration of a discovery/request operation. */
 data class ProviderCredential(
-  val providerId: ProviderId,
+  val provider: AiProvider,
   val apiKey: String,
   val customBaseUrl: String? = null,
 )
 
 data class DiscoveryResult(
-  val providerId: ProviderId,
-  val models: List<RemoteModel>,
+  val provider: AiProvider,
+  val models: List<DiscoveredModel>,
   val warnings: List<String> = emptyList(),
 )
 
-/** Network implementation is intentionally isolated from settings/UI and secure storage. */
 interface ProviderDiscovery {
   suspend fun discover(credential: ProviderCredential): DiscoveryResult
-  suspend fun probe(credential: ProviderCredential, model: RemoteModel): ModelProbeResult
+  suspend fun probe(credential: ProviderCredential, model: DiscoveredModel): DiscoveredModel
 }
 
-data class ModelProbeResult(
-  val modelId: String,
-  val reachable: Boolean,
-  val latencyMs: Long? = null,
-  val capabilities: ModelCapabilities = ModelCapabilities(),
-  val failureReason: String? = null,
-)
-
-/**
- * Produces human-readable tags without hard-coding a single "best model". The router can use
- * the same capability data independently.
- */
+/** Human-readable capability descriptions for the model picker. */
 object ModelExplainer {
-  fun tags(model: RemoteModel): List<String> = buildList {
-    if (model.capabilities.toolCalling) add("Tools")
-    if (model.capabilities.vision) add("Vision")
-    if (model.capabilities.reasoning) add("Reasoning")
-    if (model.capabilities.fast) add("Fast")
-    if (model.capabilities.longContext) add("Long context")
+  fun tags(model: DiscoveredModel): List<String> = buildList {
+    if (ModelCapability.TOOL_CALLING in model.capabilities) add("Tools")
+    if (ModelCapability.VISION in model.capabilities) add("Vision")
+    if (ModelCapability.REASONING in model.capabilities) add("Reasoning")
+    if (ModelCapability.AUDIO_INPUT in model.capabilities) add("Audio input")
+    if (ModelCapability.AUDIO_OUTPUT in model.capabilities) add("Audio output")
+    if (ModelCapability.STREAMING in model.capabilities) add("Streaming")
   }
 
-  fun bestFor(model: RemoteModel): List<String> = buildList {
-    if (model.capabilities.toolCalling && model.capabilities.fast) add("everyday Agent tasks")
-    if (model.capabilities.vision) add("screen understanding")
-    if (model.capabilities.reasoning) add("complex planning")
-    if (model.capabilities.longContext) add("long conversations and documents")
+  fun bestFor(model: DiscoveredModel): List<String> = buildList {
+    if (ModelCapability.TOOL_CALLING in model.capabilities) add("Agent and phone-control tasks")
+    if (ModelCapability.VISION in model.capabilities) add("screen understanding")
+    if (ModelCapability.REASONING in model.capabilities) add("complex planning")
+    if ((model.contextWindow ?: 0) >= 100_000) add("long conversations and documents")
   }.distinct()
 }
