@@ -1,0 +1,40 @@
+name: Astra Alpha Release
+
+on:
+  push:
+    branches: [astra-integration]
+    paths:
+      - '.github/workflows/astra_release.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+          cache-dependency-path: Android/src/**/*.gradle*
+      - name: Build debug APK
+        working-directory: Android/src
+        run: |
+          chmod +x gradlew
+          ./gradlew :app:assembleDebug --stacktrace
+      - name: Prepare APK
+        run: cp Android/src/app/build/outputs/apk/debug/*.apk Astra-Phone-Agent-v0.1.0-alpha.apk
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete v0.1.0-alpha --cleanup-tag -y || true
+          gh release create v0.1.0-alpha Astra-Phone-Agent-v0.1.0-alpha.apk \
+            --target "$GITHUB_SHA" \
+            --title "Astra Phone Agent v0.1.0 Alpha" \
+            --notes "First installable Astra Phone Agent alpha built from the astra-integration branch. Debug/testing build: provider/model foundation, agent runtime integration, Accessibility phone control, privacy/security foundations, voice/wake-word/skills scaffolding and MCP integration. Not a production release."

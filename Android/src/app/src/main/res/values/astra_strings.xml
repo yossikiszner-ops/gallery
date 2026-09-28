@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="astra_accessibility_description">Astra Agent phone control. When enabled by you, Astra can read visible UI structure and perform taps, typing, scrolling and navigation for tasks you request.</string>
+  <string name="astra_settings_title">Astra Agent</string>
+  <string name="astra_provider_models">Providers &amp; Models</string>
+  <string name="astra_voice">Voice</string>
+  <string name="astra_wake_word">Wake Word</string>
+  <string name="astra_permissions">Permissions &amp; Autonomy</string>
+  <string name="astra_training">Agent Training</string>
+</resources>
